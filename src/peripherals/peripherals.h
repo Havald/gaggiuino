@@ -18,14 +18,7 @@ static inline void pinInit(void) {
   pinMode(HX711_dout_2, INPUT_PULLUP);
 }
 
-// Actuating the heater element
-static inline void setBoilerOn(void) {
-  digitalWrite(relayPin, HIGH);  // boilerPin -> HIGH
-}
 
-static inline void setBoilerOff(void) {
-  digitalWrite(relayPin, LOW);  // boilerPin -> LOW
-}
 
 //Function to get the state of the brew switch button
 //returns true or false based on the read P(power) value

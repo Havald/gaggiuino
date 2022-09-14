@@ -28,7 +28,6 @@
 #define TRAY_FULL_THRESHOLD     700.f
 
 
-
 typedef enum {
     OPMODE_straight9Bar,
     OPMODE_justPreinfusion,

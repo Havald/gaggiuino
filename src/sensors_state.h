@@ -4,11 +4,13 @@
 struct SensorState {
   float temperature;
   float pressure;
-  bool isPressureFalling;
-  bool isPressureRising;
+  float pressureDelta;
   float pumpFlow;
   float weightFlow;
+  float liquidPumped;
   float weight;
+  float flowDelta;
+  bool isOutputFlow;
 };
 
 #endif

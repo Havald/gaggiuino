@@ -3,10 +3,9 @@
 
 #include <Arduino.h>
 
-void    pressureSensorInit(void);
-float   getPressure(void);
-bool    isPressureFalling(void);
-bool    isPressureRising(void);
-int8_t  getAdsError(void);
+void pressureSensorInit(void);
+float getPressure(void);
+float refreshPressureDelta(void);
+int8_t getAdsError(void);
 
 #endif

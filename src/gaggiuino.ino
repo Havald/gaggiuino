@@ -5,7 +5,6 @@
 #include "gaggiuino.h"
 
 SimpleKalmanFilter smoothPressure(2, 2, 1.00);
-SimpleKalmanFilter smoothPumpFlow(2, 2, 1.00);
 
 // default phases. Updated in updatePressureProfilePhases.
 Phase phaseArray[6];
@@ -135,10 +134,9 @@ static void sensorsReadWeight(void) {
 
 static void sensorsReadPressure(void) {
     if (millis() > pressureTimer) {
-        currentState.pressure = getPressure();
+        currentState.pressure = smoothPressure.updateEstimate(getPressure());
         currentState.isPressureRising = isPressureRising();
         currentState.isPressureFalling = isPressureFalling();
-        smoothedPressure = smoothPressure.updateEstimate(currentState.pressure);
         pressureTimer = millis() + GET_PRESSURE_READ_EVERY;
     }
 }
@@ -154,14 +152,13 @@ static void calculateWeightAndFlow(void) {
             long pumpClicks = getAndResetClickCounter();
             float cps = 1000.f * pumpClicks / elapsedTime;
             currentState.pumpFlow = getPumpFlow(cps, currentState.pressure);
-            smoothedPumpFlow = smoothPumpFlow.updateEstimate(currentState.pumpFlow);
 
             if (scalesIsPresent()) {
                 currentState.weightFlow = fmaxf(0.f, (shotWeight - previousWeight) * 1000 / elapsedTime);
                 previousWeight = shotWeight;
             } else {
                 if (preinfusionFinished /*&& !currentState.isPressureRaising*/) {
-                    shotWeight += smoothedPumpFlow * elapsedTime / 1000;
+                    shotWeight += currentState.pumpFlow * elapsedTime / 1000;
                 }
             }
 
@@ -180,7 +177,7 @@ bool stopOnWeight() {
                 if (scalesIsPresent() && preinfusionFinished)
                     brewStopWeight = shotWeight + currentState.weightFlow * 10.f;
                 else
-                    brewStopWeight = shotWeight + (smoothedPumpFlow * 2.f * 10.f);
+                    brewStopWeight = shotWeight + (currentState.pumpFlow * 2.f * 10.f);
                 return true;
             } else
                 return false;
@@ -263,18 +260,12 @@ static void modeSelect(void) {
 static void lcdRefresh(void) {
 
     if (millis() > pageRefreshTimer) {
-/*LCD pressure output, as a measure to beautify the graphs locking the live pressure read for the LCD alone*/
-#ifdef BEAUTIFY_GRAPH
-        lcdSetPressure(
-            brewActive
-                ? smoothedPressure * 10.f
-                : currentState.pressure * 10.f);
-#else
+        /*LCD pressure output, as a measure to beautify the graphs locking the live pressure read for the LCD alone*/
+
         lcdSetPressure(
             currentState.pressure > 0.f
                 ? currentState.pressure * 10.f
                 : 0.f);
-#endif
 
         /*LCD temp output*/
         lcdSetTemperature(currentState.temperature - runningCfg.offsetTemp);
@@ -302,7 +293,7 @@ static void lcdRefresh(void) {
             lcdSetFlow(
                 currentState.weight > 0.4f // currentState.weight is always zero if scales are not present
                     ? currentState.weightFlow * 10.f
-                    : smoothedPumpFlow * 10.f);
+                    : currentState.pumpFlow * 10.f);
         }
 
 #if defined(DEBUG_ENABLED)
